@@ -61,11 +61,8 @@ const bootloader = async port => {
 
 const sync = port => {
   port.flush(() => {
-    port.write([...syncFrame], "chunk", async () => {
-      port.write([...syncFrame], "chunk", async () => {
-        const data = port.read(12*128);
-        console.dir(data);
-      });
+    port.write([...syncFrame, ...syncFrame], "chunk", async () => {
+
     });
   });
 };
