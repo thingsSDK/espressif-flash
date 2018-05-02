@@ -78,5 +78,6 @@ port.on("open", async () => {
   await send(syncFrame);
   await send(syncFrame);
   receivedInformation = await receive(port);
-  console.log(receivedInformation)
+  console.log(receivedInformation);
+  port.close()
 });
