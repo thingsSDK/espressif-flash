@@ -1,4 +1,6 @@
-import delay from "./delay";
+import delay from "./lib/delay";
+import bootloader from './lib/bootloader';
+import portWrapper from './lib/port';
 import SerialPort from "serialport";
 const syncFrame = [
   0xc0,
@@ -49,28 +51,32 @@ const syncFrame = [
   0xc0
 ];
 
-const bootloader = async port => {
-  await delay(0);
-  port.set({ rts: true, dtr: false });
-  await delay(5);
-  port.set({ rts: false, dtr: true });
-  await delay(50);
-  port.set({ rts: false, dtr: false });
-  sync(port);
-};
 
-const sync = port => {
-  port.flush(() => {
-    port.write([...syncFrame, ...syncFrame], "chunk", async () => {
-
-    });
+const createSend = port => async data => {
+  return new Promise((resolve, reject) => {
+    port.flush(() => {
+      port.write([...data], 'chunk', () => port.drain(resolve))
+    })
   });
-};
+} 
 
+const receive = async port => {
+  return new Promise((resolve, reject) => {
+    port.once('readable', () => resolve(port.read()));
+    port.once('error', reject);
+  })
+}
 const port = new SerialPort("COM12", {
   baudRate: 115200
 });
 
-port.on("open", () => {
-  bootloader(port);
+
+port.on("open", async () => {
+  await bootloader(port);
+  const send = createSend(port);
+  let receivedInformation = null;
+  await send(syncFrame);
+  await send(syncFrame);
+  receivedInformation = await receive(port);
+  console.log(receivedInformation)
 });
